@@ -37,13 +37,14 @@ namespace dump {
  * Selects an index to use during the dump.
  *
  * @param table Information about a table.
+ * @param hint Optional index name to use (overrides default selection logic).
  *
  * @returns Selected index or nullptr if table does not contain a suitable
  *          index, plus true if selected index is a primary key or non-NULL
  *          unique index.
  */
 std::pair<const Instance_cache::Index *, bool> select_index(
-    const Instance_cache::Table &table);
+    const Instance_cache::Table &table, const std::string &hint = {});
 
 }  // namespace dump
 }  // namespace mysqlsh

@@ -1745,6 +1745,12 @@ compatibility issues with MySQL HeatWave Service.
 @li <b>chunking</b>: bool (default: true) - Enable chunking of the tables.
 @li <b>bytesPerChunk</b>: string (default: "64M") - Sets average estimated
 number of bytes to be written to each chunk file, enables <b>chunking</b>.
+@li <b>indexHints</b>: dictionary (default: empty) - A dictionary mapping table
+names (in the format "schema.table") to index names. Specifies which index to
+use for chunking instead of the default (primary key or best unique index). This
+is useful when the primary key has poor data distribution and an alternative
+unique index would provide better-balanced chunks. Example:
+{"myschema.mytable": "idx_alternate"}
 @li <b>threads</b>: int (default: 4) - Use N threads to dump data chunks from
 the server.
 )*");
@@ -2357,6 +2363,12 @@ MySQL HeatWave Service, also checks for compatibility issues.
 @li <b>chunking</b>: bool (default: true) - Enable chunking of the tables.
 @li <b>bytesPerChunk</b>: string (default: "64M") - Sets average estimated
 number of bytes to be copied in each chunk, enables <b>chunking</b>.
+@li <b>indexHints</b>: dictionary (default: empty) - A dictionary mapping table
+names (in the format "schema.table") to index names. Specifies which index to
+use for chunking instead of the default (primary key or best unique index). This
+is useful when the primary key has poor data distribution and an alternative
+unique index would provide better-balanced chunks. Example:
+{"myschema.mytable": "idx_alternate"}
 
 @li <b>threads</b>: int (default: 4) - Use N threads to read the data from
 the source server and additional N threads to write the data to the target

@@ -79,6 +79,10 @@ class Ddl_dumper_options : public Dump_options {
 
   bool checksum() const override { return m_checksum; }
 
+  const std::unordered_map<std::string, std::string> &index_hints() const {
+    return m_index_hints;
+  }
+
   void enable_mds_compatibility_checks();
 
   using Dump_options::set_target_version;
@@ -102,6 +106,7 @@ class Ddl_dumper_options : public Dump_options {
   void set_target_version_str(const std::string &value);
   void set_dry_run(bool dry_run);
   void set_threads(uint64_t threads);
+  void set_index_hints(const std::map<std::string, std::string> &hints);
 
   bool m_split = true;
   uint64_t m_bytes_per_chunk;
@@ -122,6 +127,9 @@ class Ddl_dumper_options : public Dump_options {
   bool m_skip_consistency_checks = false;
   bool m_skip_upgrade_checks = false;
   bool m_checksum = false;
+
+  // Maps "schema.table" -> "index_name" to hint which index to use for chunking
+  std::unordered_map<std::string, std::string> m_index_hints;
 };
 
 }  // namespace dump

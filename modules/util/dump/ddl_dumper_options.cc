@@ -90,6 +90,7 @@ const shcore::Option_pack_def<Ddl_dumper_options>
           .optional("checksum", &Ddl_dumper_options::m_checksum)
           .optional("lakehouseTarget",
                     &Ddl_dumper_options::set_lakehouse_target)
+          .optional("indexHints", &Ddl_dumper_options::set_index_hints)
           .on_done(&Ddl_dumper_options::on_unpacked_options);
 
   return opts;
@@ -205,6 +206,18 @@ void Ddl_dumper_options::set_threads(uint64_t threads) {
 
   // By default, m_worker_threads is equal to m_threads
   m_worker_threads = threads;
+}
+
+void Ddl_dumper_options::set_index_hints(
+    const std::map<std::string, std::string> &hints) {
+  m_index_hints.clear();
+  for (const auto &[key, value] : hints) {
+    if (value.empty()) {
+      throw std::invalid_argument(
+          "The value for index hint '" + key + "' cannot be empty.");
+    }
+    m_index_hints[key] = value;
+  }
 }
 
 void Ddl_dumper_options::on_set_url(

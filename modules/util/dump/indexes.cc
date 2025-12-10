@@ -32,8 +32,29 @@ namespace mysqlsh {
 namespace dump {
 
 std::pair<const Instance_cache::Index *, bool> select_index(
-    const Instance_cache::Table &table) {
+    const Instance_cache::Table &table, const std::string &hint) {
   using Indexes = std::vector<const Instance_cache::Index *>;
+
+  // If a hint is provided, try to use it first
+  if (!hint.empty()) {
+    // Check primary key
+    if (table.primary_key && table.primary_key->name == hint) {
+      return {table.primary_key, true};
+    }
+    // Check primary key equivalents
+    for (const auto idx : table.primary_key_equivalents) {
+      if (idx->name == hint) {
+        return {idx, true};
+      }
+    }
+    // Check unique keys
+    for (const auto idx : table.unique_keys) {
+      if (idx->name == hint) {
+        return {idx, false};
+      }
+    }
+    // Hint was provided but index not found - this is handled by the caller
+  }
 
   const auto filter_indexes = [](const Indexes &indexes) {
     Indexes filtered;

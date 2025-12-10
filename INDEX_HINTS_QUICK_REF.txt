@@ -1,0 +1,76 @@
+INDEX HINTS FEATURE - QUICK REFERENCE
+======================================
+
+WHAT WAS CHANGED:
+-----------------
+
+1. ddl_dumper_options.h/cc
+   - Added m_index_hints member (unordered_map<string, string>)
+   - Added index_hints() getter
+   - Added set_index_hints() method with validation
+   - Added "indexHints" to option pack
+
+2. indexes.h/cc
+   - Modified select_index() to accept optional hint parameter
+   - Added hint lookup logic before default selection algorithm
+
+3. dumper.cc (line ~3770)
+   - Lookup hint for "schema.table"
+   - Pass hint to select_index()
+   - Validate hinted index exists with helpful error message
+
+4. mod_util.cc
+   - Added documentation for indexHints option
+
+USAGE:
+------
+
+util.dumpTables("mydb", ["mytable"], "/backup", {
+  threads: 8,
+  indexHints: {
+    "mydb.mytable": "idx_better_distribution"
+  }
+});
+
+DECISION FLOW:
+--------------
+
+1. If hint provided for table:
+   - Search: PRIMARY → PKE → Unique keys
+   - If found: USE IT (overrides default logic)
+   - If not found: ERROR with list of available indexes
+
+2. If no hint:
+   - Use default algorithm (PRIMARY → PKE → Unique → None)
+
+KEY BENEFIT:
+------------
+
+When PRIMARY KEY has poor distribution (gaps, non-sequential),
+but a UNIQUE index has better distribution, specify that index
+to get more balanced chunks across parallel dump threads.
+
+EXAMPLE SCENARIO:
+-----------------
+
+Table: orders (10M rows)
+- order_id (PK): Has gaps due to deletions, values 1-20M
+- (created_at, user_id) UNIQUE: Evenly distributed
+
+Without hint: Chunks based on order_id ranges may be unbalanced
+With hint: Chunks based on created_at provide better balance
+
+ERROR HANDLING:
+---------------
+
+Bad index name → Clear error:
+  "Could not find index 'bad_idx' specified in indexHints for
+   table mydb.mytable. Available indexes: PRIMARY, idx_created, idx_user"
+
+BACKWARDS COMPATIBLE:
+---------------------
+
+✓ New option is optional (default: empty map)
+✓ Existing code works without changes
+✓ No performance impact when not used
+

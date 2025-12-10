@@ -1692,7 +1692,7 @@ class Dumper::Table_worker final {
     }
   }
 
-  std::size_t create_ranged_tasks(const Table_task &table) const {
+    std::size_t create_ranged_tasks(const Table_task &table) const {
     if (!m_dumper->m_options.split()) {
       return 0;
     }
@@ -3767,7 +3767,32 @@ Dumper::Table_task Dumper::create_table_task(const Schema_info &schema,
   task.schema = schema.name;
   task.basename = table.basename;
   task.info = table.info;
-  std::tie(task.index.info, task.index.is_pke) = select_index(*table.info);
+
+  // Check if there's an index hint for this table
+  std::string index_hint;
+  const auto &hints = m_options.index_hints();
+  const auto hint_key = schema.name + "." + table.name;
+  if (const auto it = hints.find(hint_key); it != hints.end()) {
+    index_hint = it->second;
+  }
+
+  std::tie(task.index.info, task.index.is_pke) = select_index(*table.info, index_hint);
+
+  // Validate that the hint was used if provided
+  if (!index_hint.empty() && !task.index.info) {
+    throw std::runtime_error(
+        "Could not find index '" + index_hint + "' specified in indexHints for table " +
+        hint_key + ". Available indexes: " +
+        [&table]() {
+          std::vector<std::string> names;
+          if (table.info->primary_key) names.push_back(table.info->primary_key->name);
+          for (const auto idx : table.info->primary_key_equivalents)
+            names.push_back(idx->name);
+          for (const auto idx : table.info->unique_keys) names.push_back(idx->name);
+          return names.empty() ? "none" : shcore::str_join(names, ", ");
+        }());
+  }
+
   task.partitions = table.partitions;
   task.extra_filter = m_options.where(schema.name, table.name);
 
